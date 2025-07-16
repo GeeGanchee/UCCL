@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vehicle Inspection Add-In</title>
+  <meta charset="UTF-8">
+  <meta name="geotab:addin" content='{
+    "id": "vehicleInspectionAddin",
+    "url": "https://YOUR-SERVER.COM/PATH/TO/geotab-inspection-addin.html",
+    "label": "Pre-Start Inspection",
+    "icon": ""
+  }'>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    select, input, textarea, button { width: 100%; padding: 6px; margin-top: 5px; }
+    .checklist { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    .hidden { display: none; }
+    #successMessage { color: green; font-weight: bold; margin-top: 20px; }
+  </style>
+</head>
+<body>
+<h2>Pre-Start Vehicle Inspection</h2>
+<form id="inspectionForm">
+  <label for="inspectionFormId">Inspection Form ID</label>
+  <input type="text" id="inspectionFormId" name="InspectionFormId" required>
+
+  <label for="driver">Driver</label>
+  <select id="driver" name="Driver" required>
+    <option value="">-- Select Driver --</option>
+    <!-- Driver options will be added by JS -->
+  </select>
+
+  <label for="fleetNumber">Fleet Number</label>
+  <input type="text" id="fleetNumber" name="FleetNumber" readonly>
+
+  <label for="vehicleModel">Vehicle</label>
+  <input type="text" id="vehicleModel" name="VehicleModel" readonly>
+
+  <label for="licensePlate">License Plate</label>
+  <input type="text" id="licensePlate" name="LicensePlate" readonly>
+
+  <label for="otherStaff">Other Staff (Recipients, e.g. emails or names, comma-separated)</label>
+  <input type="text" id="otherStaff" name="OtherStaff">
+
+  <input type="hidden" id="StartTime" name="StartTime">
+  <input type="hidden" id="Location" name="Location">
+
+  <div class="checklist" id="checklistContainer">
+    <!-- Checklist will populate here -->
+  </div>
+
+  <button type="submit">Submit Inspection</button>
+</form>
+<div id="successMessage" class="hidden">Inspection submitted! (See console for payload.)</div>
+
+<script>
+// Sample driverMap
+const driverMap = {
+  "kymani paikea": {
+    "Fleet Number": "132",
+    "Vehicle Make & Model": "8T Hyundai R80CR-9 2018",
+    "License Plate": "",
+    "Form ID": "4"
+  },
+  "james mischewski": {
+    "Fleet Number": "463",
+    "Vehicle Make & Model": "Ford Ranger 2010 4x2 XLT D/C W/S",
+    "License Plate": "FQC642",
+    "Form ID": "1"
+  }
+  // Add more drivers as needed
+};
+
+const formTemplates = {
+  "1": [
+    "Battery",
+    "Belts",
+    "Brakes",
+    "Lights",
+    "Tyres",
+    "Seatbelt",
+    "WOF"
+  ],
+  "4": [
+    "Hydraulics",
+    "Cab Cleanliness",
+    "Blades",
+    "Pins & Locks",
+    "Fire Extinguisher"
+  ]
+};
+
+function populateDrivers() {
+  const driverSelect = document.getElementById("driver");
+  Object.keys(driverMap).forEach(driverKey => {
+    const opt = document.createElement("option");
+    opt.value = driverKey;
+    opt.textContent = driverKey.replace(/\b\w/g, l => l.toUpperCase());
+    driverSelect.appendChild(opt);
+  });
+}
+
+function handleDriverChange() {
+  const driver = document.getElementById("driver").value;
+  const data = driverMap[driver] || {};
+  document.getElementById("fleetNumber").value = data["Fleet Number"] || "";
+  document.getElementById("vehicleModel").value = data["Vehicle Make & Model"] || "";
+  document.getElementById("licensePlate").value = data["License Plate"] || "";
+
+  // Fill checklist
+  const formId = data["Form ID"];
+  const parts = formTemplates[formId] || [];
+  const container = document.getElementById("checklistContainer");
+  container.innerHTML = "";
+
+  parts.forEach(part => {
+    const partId = part.replace(/\s+/g, '-').toLowerCase();
+    container

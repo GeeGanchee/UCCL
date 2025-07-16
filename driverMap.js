@@ -1,0 +1,3 @@
+const driverMap = {
+  // ...your whole driver map object...
+};
