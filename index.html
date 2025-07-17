@@ -111,7 +111,7 @@
         const timestamp = new Date().toISOString();
 
         // Compose inspection summary
-        const inspectionText = 
+        const inspectionText =
           `Pre-Start Inspection:\n` +
           `Driver: ${driver}\n` +
           `VehicleId: ${vehicleId}\n` +
@@ -142,4 +142,11 @@
           });
         } else {
           document.getElementById('successMessage').style.display = 'none';
-          document.getElementById('errorMessage').textContent = 'Geotab API not available
+          document.getElementById('errorMessage').textContent = 'Geotab API not available.';
+          document.getElementById('errorMessage').style.display = 'block';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
