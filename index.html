@@ -62,9 +62,9 @@
       return {
         initialize: function(api, state, callback) {
           // Use only api.getSession (never state.getSession)
-          if (api.getSession) {
+          if (api && typeof api.getSession === "function") {
             api.getSession(function(session) {
-              document.getElementById('driver').value = session.userName || '';
+              document.getElementById('driver').value = session && session.userName ? session.userName : '';
             });
           } else {
             document.getElementById('driver').value = '';
@@ -121,7 +121,7 @@
           `Time: ${timestamp}`;
 
         // Use Geotab API to save the inspection as a Note
-        if (window.api) {
+        if (window.api && typeof window.api.call === "function") {
           window.api.call("Add", {
             typeName: "Note",
             entity: {
