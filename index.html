@@ -3,150 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <meta name="geotab:addin" content='{
-    "id": "vehicleInspectionAddin",
+    "id": "demoInspectionAddin",
     "url": "https://geeganchee.github.io/UCCL/",
-    "label": "Pre-Start Inspection",
+    "label": "Demo Inspections",
     "icon": "icon.svg"
   }'>
-  <title>Vehicle Inspection Add-In</title>
+  <title>Demo Inspection Add-In</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     label { font-weight: bold; display: block; margin-top: 10px; }
-    input, textarea, select, button { width: 100%; margin-top: 5px; }
-    .checklist { margin-top: 20px; }
-    #successMessage { color: green; display: none; margin-top: 20px; }
-    #errorMessage { color: red; display: none; margin-top: 20px; }
-    #vehicleLoading {
-      display: none;
-      font-size: 0.9em;
-      color: #888;
-      margin-top: 5px;
-    }
+    select, input, textarea, button { width: 100%; margin-top: 5px; }
+    .fields { margin-top: 15px; }
+    #success { color: green; display: none; margin-top: 15px; }
   </style>
 </head>
 <body>
-  <h2>Vehicle Inspection</h2>
+  <h2>Demo Vehicle Inspection</h2>
   <form id="inspectionForm">
-    <label for="driver">Driver:</label>
-    <input type="text" id="driver" name="driver" required readonly>
     <label for="vehicle">Vehicle:</label>
-    <select id="vehicle" name="vehicle" required disabled>
-      <option value="">Loading vehicles...</option>
-    </select>
-    <span id="vehicleLoading">Loading vehicle list, please wait...</span>
-    <div class="checklist">
-      <label>Brakes:</label>
-      <select name="brakes" id="brakes" required>
-        <option value="">Select</option>
-        <option value="OK">OK</option>
-        <option value="Defective">Defective</option>
-      </select>
-      <label>Lights:</label>
-      <select name="lights" id="lights" required>
-        <option value="">Select</option>
-        <option value="OK">OK</option>
-        <option value="Defective">Defective</option>
-      </select>
-      <label for="comments">Additional Comments:</label>
-      <textarea id="comments" name="comments"></textarea>
-    </div>
-    <button type="submit">Submit Inspection</button>
+    <select id="vehicle" required></select>
+    <label for="sheet">Inspection Sheet:</label>
+    <select id="sheet" required></select>
+    <div id="fields" class="fields"></div>
+    <button type="submit" style="margin-top:15px;">Submit Inspection</button>
   </form>
-  <div id="successMessage">Inspection uploaded!</div>
-  <div id="errorMessage"></div>
+  <div id="success">Inspection submitted! (Demo only)</div>
   <script>
-    // Geotab Add-In initialization
+    // Demo data
+    const vehicles = [
+      { id: 'veh1', name: 'Car - Demo' },
+      { id: 'veh2', name: 'Truck - Demo' },
+      { id: 'veh3', name: 'Van - Demo' }
+    ];
+    const inspectionSheets = [
+      { id: 'prestart', name: 'Pre-Start Inspection', fields: ['Brakes', 'Lights'] },
+      { id: 'daily', name: 'Daily Inspection', fields: ['Tyres', 'Oil'] },
+      { id: 'safety', name: 'Safety Inspection', fields: ['First Aid Kit', 'Fire Extinguisher'] }
+    ];
+
+    // Populate options
+    const vehicleSelect = document.getElementById('vehicle');
+    vehicles.forEach(v => {
+      const option = document.createElement('option');
+      option.value = v.id;
+      option.textContent = v.name;
+      vehicleSelect.appendChild(option);
+    });
+    const sheetSelect = document.getElementById('sheet');
+    inspectionSheets.forEach(s => {
+      const option = document.createElement('option');
+      option.value = s.id;
+      option.textContent = s.name;
+      sheetSelect.appendChild(option);
+    });
+
+    // Display fields for selected sheet
+    sheetSelect.addEventListener('change', function() {
+      const selected = inspectionSheets.find(s => s.id === this.value);
+      const fieldsDiv = document.getElementById('fields');
+      fieldsDiv.innerHTML = '';
+      if (selected) {
+        selected.fields.forEach(field => {
+          const label = document.createElement('label');
+          label.textContent = field + ':';
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.name = field;
+          input.required = true;
+          fieldsDiv.appendChild(label);
+          fieldsDiv.appendChild(input);
+        });
+      }
+    });
+
+    // Form submit handler
+    document.getElementById('inspectionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      document.getElementById('success').style.display = 'block';
+      setTimeout(() => { document.getElementById('success').style.display = 'none'; }, 2000);
+      this.reset();
+      document.getElementById('fields').innerHTML = '';
+    });
+
+    // Show fields for the first inspection sheet by default
+    sheetSelect.value = inspectionSheets[0].id;
+    sheetSelect.dispatchEvent(new Event('change'));
+
+    // Geotab add-in boilerplate (so it works in MyGeotab)
     window.geotab = window.geotab || {};
     window.geotab.addin = window.geotab.addin || {};
-    window.geotab.addin.vehicleInspectionAddin = function(api, state) {
+    window.geotab.addin.demoInspectionAddin = function(api, state) {
       return {
-        initialize: function(api, state, callback) {
-          // Use only api.getSession (never state.getSession)
-          if (api && typeof api.getSession === "function") {
-            api.getSession(function(session) {
-              document.getElementById('driver').value = session && session.userName ? session.userName : '';
-            });
-          } else {
-            document.getElementById('driver').value = '';
-          }
-
-          // Show loading spinner for vehicles
-          document.getElementById('vehicleLoading').style.display = 'inline';
-          document.getElementById('vehicle').disabled = true;
-
-          // Load vehicles into the dropdown
-          api.call('Get', { typeName: 'Device', resultsLimit: 50 }, function(devices) {
-            const vehicleSelect = document.getElementById('vehicle');
-            vehicleSelect.innerHTML = '<option value="">Select vehicle</option>';
-            devices.forEach(function(device) {
-              if (device && device.id && device.name) {
-                const option = document.createElement('option');
-                option.value = device.id;
-                option.textContent = device.name;
-                vehicleSelect.appendChild(option);
-              }
-            });
-            document.getElementById('vehicleLoading').style.display = 'none';
-            vehicleSelect.disabled = false;
-          }, function(error) {
-            document.getElementById('vehicle').innerHTML = '<option value="">Failed to load vehicles</option>';
-            document.getElementById('vehicleLoading').style.display = 'none';
-            document.getElementById('vehicle').disabled = false;
-          });
-          callback();
-        },
+        initialize: function(api, state, callback) { callback(); },
         focus: function(api, state) {}
       };
     };
-
-    // Form submission handler
-    document.addEventListener("DOMContentLoaded", function() {
-      document.getElementById('inspectionForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const driver = document.getElementById('driver').value;
-        const vehicleId = document.getElementById('vehicle').value;
-        const brakes = document.getElementById('brakes').value;
-        const lights = document.getElementById('lights').value;
-        const comments = document.getElementById('comments').value;
-        const timestamp = new Date().toISOString();
-
-        // Compose inspection summary
-        const inspectionText =
-          `Pre-Start Inspection:\n` +
-          `Driver: ${driver}\n` +
-          `VehicleId: ${vehicleId}\n` +
-          `Brakes: ${brakes}\n` +
-          `Lights: ${lights}\n` +
-          `Comments: ${comments}\n` +
-          `Time: ${timestamp}`;
-
-        // Use Geotab API to save the inspection as a Note
-        if (window.api && typeof window.api.call === "function") {
-          window.api.call("Add", {
-            typeName: "Note",
-            entity: {
-              userName: driver,
-              device: { id: vehicleId },
-              dateTime: timestamp,
-              noteType: "General",
-              text: inspectionText
-            }
-          }, function(result) {
-            document.getElementById('successMessage').style.display = 'block';
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('inspectionForm').reset();
-          }, function(error) {
-            document.getElementById('successMessage').style.display = 'none';
-            document.getElementById('errorMessage').textContent = 'Failed to upload inspection: ' + error;
-            document.getElementById('errorMessage').style.display = 'block';
-          });
-        } else {
-          document.getElementById('successMessage').style.display = 'none';
-          document.getElementById('errorMessage').textContent = 'Geotab API not available.';
-          document.getElementById('errorMessage').style.display = 'block';
-        }
-      });
-    });
   </script>
 </body>
 </html>
