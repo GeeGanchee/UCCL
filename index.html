@@ -60,8 +60,7 @@
           });
 
           // Load vehicles into the dropdown
-          api.call('Get', { typeName: 'Device', resultsLimit: 10 }, function(devices) {
-            const vehicleSelect = document.getElementById('vehicle');
+         const vehicleSelect = document.getElementById('vehicle');
             vehicleSelect.innerHTML = '<option value="">Select vehicle</option>';
             devices.forEach(function(device) {
               // Only list vehicles with a name
