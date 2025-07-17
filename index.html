@@ -16,6 +16,12 @@
     .checklist { margin-top: 20px; }
     #successMessage { color: green; display: none; margin-top: 20px; }
     #errorMessage { color: red; display: none; margin-top: 20px; }
+    #vehicleLoading {
+      display: none;
+      font-size: 0.9em;
+      color: #888;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -24,9 +30,10 @@
     <label for="driver">Driver:</label>
     <input type="text" id="driver" name="driver" required readonly>
     <label for="vehicle">Vehicle:</label>
-    <select id="vehicle" name="vehicle" required>
+    <select id="vehicle" name="vehicle" required disabled>
       <option value="">Loading vehicles...</option>
     </select>
+    <span id="vehicleLoading">Loading vehicle list, please wait...</span>
     <div class="checklist">
       <label>Brakes:</label>
       <select name="brakes" id="brakes" required>
@@ -59,11 +66,15 @@
             document.getElementById('driver').value = session.userName || '';
           });
 
+          // Show loading spinner for vehicles
+          document.getElementById('vehicleLoading').style.display = 'inline';
+          document.getElementById('vehicle').disabled = true;
+
           // Load vehicles into the dropdown
-         const vehicleSelect = document.getElementById('vehicle');
+          api.call('Get', { typeName: 'Device', resultsLimit: 50 }, function(devices) {
+            const vehicleSelect = document.getElementById('vehicle');
             vehicleSelect.innerHTML = '<option value="">Select vehicle</option>';
             devices.forEach(function(device) {
-              // Only list vehicles with a name
               if (device && device.id && device.name) {
                 const option = document.createElement('option');
                 option.value = device.id;
@@ -71,8 +82,12 @@
                 vehicleSelect.appendChild(option);
               }
             });
+            document.getElementById('vehicleLoading').style.display = 'none';
+            vehicleSelect.disabled = false;
           }, function(error) {
             document.getElementById('vehicle').innerHTML = '<option value="">Failed to load vehicles</option>';
+            document.getElementById('vehicleLoading').style.display = 'none';
+            document.getElementById('vehicle').disabled = false;
           });
           callback();
         },
